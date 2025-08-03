@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Admin - Aplikasi Kasir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-tachometer-alt me-2"></i>
+        Dashboard Admin
+    </h2>
+    <div class="text-muted">
+        <i class="fas fa-clock me-1"></i>
+        {{ moment().format('LLLL') if moment else 'Sekarang' }}
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Barang</h6>
+                        <h3 class="mb-0">{{ stats.total_items }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-boxes fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Transaksi</h6>
+                        <h3 class="mb-0">{{ stats.total_transactions }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-receipt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Pendapatan</h6>
+                        <h3 class="mb-0">Rp {{ "{:,.0f}".format(stats.total_revenue) }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-money-bill-wave fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Profit</h6>
+                        <h3 class="mb-0">Rp {{ "{:,.0f}".format(stats.total_profit) }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Low Stock Alert -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Stok Rendah
+                </h6>
+                <span class="badge bg-warning">{{ stats.low_stock_count }} item</span>
+            </div>
+            <div class="card-body">
+                {% if low_stock_items %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama</th>
+                                    <th>Stok</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_stock_items[:5] %}
+                                <tr>
+                                    <td>{{ item.kode }}</td>
+                                    <td>{{ item.nama }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ item.stok_akhir }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin_edit_item', item_id=item.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if low_stock_items|length > 5 %}
+                    <div class="text-center">
+                        <a href="{{ url_for('admin_items') }}" class="btn btn-sm btn-outline-secondary">
+                            Lihat Semua
+                        </a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <p>Tidak ada stok yang rendah</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Aksi Cepat
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin_add_item') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        Tambah Barang Baru
+                    </a>
+                    <a href="{{ url_for('admin_items') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-boxes me-2"></i>
+                        Kelola Barang
+                    </a>
+                    <a href="{{ url_for('admin_reports') }}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Lihat Laporan
+                    </a>
+                    <a href="{{ url_for('cashier_pos') }}" class="btn btn-outline-success">
+                        <i class="fas fa-cash-register me-2"></i>
+                        Buka POS
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

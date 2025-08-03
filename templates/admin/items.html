@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Kelola Barang - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-boxes me-2"></i>
+        Kelola Barang
+    </h2>
+    <a href="{{ url_for('admin_add_item') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>
+        Tambah Barang
+    </a>
+</div>
+
+{% if items %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Kode</th>
+                        <th>Nama Barang</th>
+                        <th>Harga Awal</th>
+                        <th>Harga Jual</th>
+                        <th>Stok Awal</th>
+                        <th>Stok Akhir</th>
+                        <th>Total Profit</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>
+                            <code>{{ item.kode }}</code>
+                        </td>
+                        <td>
+                            <strong>{{ item.nama }}</strong>
+                        </td>
+                        <td>
+                            Rp {{ "{:,.0f}".format(item.harga_awal) }}
+                        </td>
+                        <td>
+                            Rp {{ "{:,.0f}".format(item.harga_jual) }}
+                        </td>
+                        <td>
+                            {{ item.stok_awal }}
+                        </td>
+                        <td>
+                            <span class="badge {% if item.stok_akhir < 5 %}bg-danger{% elif item.stok_akhir < 10 %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ item.stok_akhir }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-success">
+                                Rp {{ "{:,.0f}".format(item.profit) }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.stok_akhir <= 0 %}
+                                <span class="badge bg-danger">Habis</span>
+                            {% elif item.stok_akhir < 5 %}
+                                <span class="badge bg-warning">Rendah</span>
+                            {% else %}
+                                <span class="badge bg-success">Tersedia</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('admin_edit_item', item_id=item.id) }}" 
+                                   class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('admin_delete_item', item_id=item.id) }}" 
+                                   class="btn btn-outline-danger"
+                                   onclick="return confirm('Yakin ingin menghapus barang ini?')" 
+                                   title="Hapus">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Ringkasan Inventori</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li>Total Barang: <strong>{{ items|length }}</strong></li>
+                        <li>Stok Habis: <strong>{{ items|selectattr('stok_akhir', 'eq', 0)|list|length }}</strong></li>
+                        <li>Stok Rendah: <strong>{{ items|selectattr('stok_akhir', 'lt', 5)|list|length }}</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+    <h4>Belum Ada Barang</h4>
+    <p class="text-muted">Mulai dengan menambahkan barang pertama Anda</p>
+    <a href="{{ url_for('admin_add_item') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>
+        Tambah Barang Pertama
+    </a>
+</div>
+{% endif %}
+{% endblock %}

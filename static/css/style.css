@@ -1,0 +1,220 @@
+/* Custom styles for POS application */
+
+.item-card {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: 2px solid transparent;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: var(--bs-primary);
+}
+
+.cart-item {
+    border-left: 4px solid var(--bs-primary);
+    background-color: var(--bs-gray-100);
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 0 4px 4px 0;
+}
+
+.cart-item-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.cart-item-name {
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.cart-item-code {
+    font-size: 0.8em;
+    color: var(--bs-secondary);
+}
+
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quantity-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--bs-gray-400);
+    background: var(--bs-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quantity-btn:hover {
+    background: var(--bs-primary);
+    color: white;
+    border-color: var(--bs-primary);
+}
+
+.quantity-input {
+    width: 60px;
+    text-align: center;
+    border: 1px solid var(--bs-gray-400);
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.remove-item {
+    color: var(--bs-danger);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.remove-item:hover {
+    background: var(--bs-danger);
+    color: white;
+}
+
+/* Search results styling */
+#searchResults .item-card {
+    border-color: var(--bs-warning);
+}
+
+/* Empty state styling */
+.empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--bs-gray-600);
+}
+
+/* Modal customizations */
+.modal-content {
+    border-radius: 10px;
+}
+
+.modal-header.bg-success {
+    border-radius: 10px 10px 0 0;
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .btn,
+    .modal-footer {
+        display: none !important;
+    }
+    
+    .container {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Success animation */
+@keyframes success-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.success-animation {
+    animation: success-pulse 0.3s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .item-card {
+        margin-bottom: 10px;
+    }
+    
+    .cart-item-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    
+    .quantity-control {
+        justify-content: center;
+    }
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.75em;
+}
+
+/* Table responsive improvements */
+.table-responsive {
+    border-radius: 6px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--bs-gray-700);
+    font-size: 0.875em;
+}
+
+/* Card hover effects */
+.card {
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Input group styling */
+.input-group-text {
+    background-color: var(--bs-gray-100);
+    border-color: var(--bs-gray-300);
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 6px;
+    border: none;
+}
+
+/* Dropdown styling */
+.dropdown-menu {
+    border-radius: 6px;
+    border: 1px solid var(--bs-gray-200);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+    padding: 8px 16px;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: var(--bs-gray-100);
+}

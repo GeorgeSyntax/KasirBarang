@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}Laporan Formal - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Formal Report Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="mb-1">LAPORAN KEUANGAN TOKO</h1>
+                    <h2 class="text-muted mb-3">SISTEM POINT OF SALE</h2>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Periode Laporan:</strong> {% if transactions %}{{ transactions[0]['timestamp'].split()[0] }} - {{ transactions[-1]['timestamp'].split()[0] }}{% else %}N/A{% endif %}</p>
+                            <p class="mb-1"><strong>Tanggal Cetak:</strong> <span id="currentDate"></span></p>
+                            <p class="mb-0"><strong>Operator:</strong> Administrator</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Ringkasan Kinerja Penjualan
+                </h3>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="printReport()">
+                        <i class="fas fa-print me-1"></i>
+                        Cetak Laporan
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv me-1"></i>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Executive Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    RINGKASAN EKSEKUTIF KINERJA PENJUALAN
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-receipt fa-3x text-primary mb-3"></i>
+                            <h2 class="mb-1">{{ transactions|length }}</h2>
+                            <h6 class="text-muted mb-0">TOTAL TRANSAKSI</h6>
+                            <small class="text-muted">Periode berjalan</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-money-bill-wave fa-3x text-success mb-3"></i>
+                            <h2 class="mb-1">Rp {{ "{:,.0f}".format(transactions|sum(attribute='total')) }}</h2>
+                            <h6 class="text-muted mb-0">TOTAL PENDAPATAN</h6>
+                            <small class="text-muted">Gross revenue</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                            <h2 class="mb-1">Rp {{ "{:,.0f}".format(transactions|sum(attribute='profit')) }}</h2>
+                            <h6 class="text-muted mb-0">TOTAL KEUNTUNGAN</h6>
+                            <small class="text-muted">Net profit</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 border rounded">
+                            <i class="fas fa-percentage fa-3x text-info mb-3"></i>
+                            <h2 class="mb-1">{{ "%.1f" | format((transactions|sum(attribute='profit') / transactions|sum(attribute='total') * 100) if transactions|sum(attribute='total') > 0 else 0) }}%</h2>
+                            <h6 class="text-muted mb-0">MARGIN KEUNTUNGAN</h6>
+                            <small class="text-muted">Profit margin</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Metrics -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                            <strong>Rata-rata Transaksi:</strong>
+                            <span>Rp {{ "{:,.0f}".format((transactions|sum(attribute='total') / transactions|length) if transactions|length > 0 else 0) }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                            <strong>Keuntungan per Transaksi:</strong>
+                            <span>Rp {{ "{:,.0f}".format((transactions|sum(attribute='profit') / transactions|length) if transactions|length > 0 else 0) }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                            <strong>Total Item Terjual:</strong>
+                            <span>
+                                {% set total_items = 0 %}
+                                {% for transaction in transactions %}
+                                    {% for item in transaction['items'] %}
+                                        {% set total_items = total_items + item['quantity'] %}
+                                    {% endfor %}
+                                {% endfor %}
+                                {{ total_items }} unit
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Daily Sales -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    Penjualan Harian
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if daily_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Transaksi</th>
+                                    <th>Pendapatan</th>
+                                    <th>Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for date, data in daily_sales.items() %}
+                                <tr>
+                                    <td>{{ date }}</td>
+                                    <td>{{ data.count }}</td>
+                                    <td>Rp {{ "{:,.0f}".format(data.total) }}</td>
+                                    <td>Rp {{ "{:,.0f}".format(data.profit) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-chart-line fa-2x mb-2"></i>
+                        <p>Belum ada data penjualan</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Selling Items -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>
+                    Barang Terlaris
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if top_items %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Barang</th>
+                                    <th>Terjual</th>
+                                    <th>Pendapatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for kode, data in top_items %}
+                                <tr>
+                                    <td>
+                                        {% if loop.index == 1 %}
+                                            <i class="fas fa-crown text-warning"></i>
+                                        {% elif loop.index == 2 %}
+                                            <i class="fas fa-medal text-secondary"></i>
+                                        {% elif loop.index == 3 %}
+                                            <i class="fas fa-award text-warning"></i>
+                                        {% else %}
+                                            {{ loop.index }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ data.nama }}</strong><br>
+                                        <small class="text-muted">{{ kode }}</small>
+                                    </td>
+                                    <td>{{ data.quantity }} unit</td>
+                                    <td>Rp {{ "{:,.0f}".format(data.revenue) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-trophy fa-2x mb-2"></i>
+                        <p>Belum ada data penjualan</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Transaksi Terbaru
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Waktu</th>
+                                    <th>Item</th>
+                                    <th>Total</th>
+                                    <th>Profit</th>
+                                    <th>Detail</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions[-10:] %}
+                                <tr>
+                                    <td>
+                                        <code>#{{ transaction['id'] }}</code>
+                                    </td>
+                                    <td>
+                                        {{ transaction['timestamp'] }}
+                                    </td>
+                                    <td>
+                                        {% for item in transaction['items'] %}
+                                            <small>{{ item['nama'] }} ({{ item['quantity'] }}x)</small>
+                                            {% if not loop.last %}<br>{% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <strong>Rp {{ "{:,.0f}".format(transaction['total']) }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-success">Rp {{ "{:,.0f}".format(transaction['profit']) }}</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#detail-{{ transaction['id'] }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="detail-{{ transaction['id'] }}">
+                                    <td colspan="6">
+                                        <div class="bg-light p-3 rounded">
+                                            <h6>Detail Transaksi #{{ transaction['id'] }}</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Kode</th>
+                                                            <th>Nama</th>
+                                                            <th>Harga</th>
+                                                            <th>Qty</th>
+                                                            <th>Subtotal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in transaction['items'] %}
+                                                        <tr>
+                                                            <td>{{ item['kode'] }}</td>
+                                                            <td>{{ item['nama'] }}</td>
+                                                            <td>Rp {{ "{:,.0f}".format(item['harga_jual']) }}</td>
+                                                            <td>{{ item['quantity'] }}</td>
+                                                            <td>Rp {{ "{:,.0f}".format(item['subtotal']) }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-receipt fa-3x mb-3"></i>
+                        <h5>Belum Ada Transaksi</h5>
+                        <p>Transaksi akan muncul di sini setelah ada penjualan</p>
+                        <a href="{{ url_for('cashier_pos') }}" class="btn btn-primary">
+                            <i class="fas fa-cash-register me-2"></i>
+                            Mulai Penjualan
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set current date on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const currentDate = new Date().toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+    });
+    document.getElementById('currentDate').textContent = currentDate;
+});
+function printReport() {
+    // Hide action buttons for printing
+    const actionButtons = document.querySelectorAll('.btn-group, .btn');
+    actionButtons.forEach(btn => {
+        if (btn.closest('.card-header') || btn.closest('.d-flex')) {
+            btn.style.display = 'none';
+        }
+    });
+    
+    // Add print styles
+    const printStyle = document.createElement('style');
+    printStyle.innerHTML = `
+        @media print {
+            .btn-group, .btn { display: none !important; }
+            .container-fluid { margin: 0; padding: 0; }
+            .card { border: 1px solid #000; margin-bottom: 20px; }
+            .card-header { background: #f8f9fa !important; color: #000 !important; }
+            .text-primary { color: #000 !important; }
+            .text-success { color: #000 !important; }
+            .text-warning { color: #000 !important; }
+            .text-info { color: #000 !important; }
+            body { font-size: 12px; }
+            h1, h2, h3, h4 { color: #000; }
+        }
+    `;
+    document.head.appendChild(printStyle);
+    
+    window.print();
+    
+    // Restore visibility after printing
+    setTimeout(() => {
+        actionButtons.forEach(btn => {
+            btn.style.display = '';
+        });
+        document.head.removeChild(printStyle);
+    }, 1000);
+}
+
+function exportToCSV() {
+    const transactions = {{ transactions|tojson }};
+    
+    if (!transactions || transactions.length === 0) {
+        alert('Tidak ada data untuk diekspor');
+        return;
+    }
+    
+    let csvContent = "ID,Tanggal,Waktu,Total,Profit,Jumlah Item\n";
+    
+    transactions.forEach(transaction => {
+        const [date, time] = transaction.timestamp.split(' ');
+        const itemCount = transaction.items.reduce((sum, item) => sum + item.quantity, 0);
+        
+        csvContent += `${transaction.id},"${date}","${time}",${transaction.total},${transaction.profit},${itemCount}\n`;
+    });
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `laporan-penjualan-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+{% endblock %}

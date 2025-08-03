@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat Transaksi - Kasir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-history me-2"></i>
+        Riwayat Transaksi
+    </h2>
+    <a href="{{ url_for('cashier_pos') }}" class="btn btn-primary">
+        <i class="fas fa-cash-register me-2"></i>
+        Kembali ke POS
+    </a>
+</div>
+
+{% if transactions %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID Transaksi</th>
+                        <th>Waktu</th>
+                        <th>Items</th>
+                        <th>Total Item</th>
+                        <th>Total Harga</th>
+                        <th>Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>
+                            <code>#{{ transaction['id'] }}</code>
+                        </td>
+                        <td>
+                            {{ transaction['timestamp'] }}
+                        </td>
+                        <td>
+                            {% for item in (transaction['items'] or [])[:2] %}
+                                <small class="d-block">{{ item['nama'] }}</small>
+                            {% endfor %}
+                            {% if (transaction['items'] or [])|length > 2 %}
+                                <small class="text-muted">+{{ (transaction['items'] or [])|length - 2 }} lainnya</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                {% set item_count = 0 %}
+                                {% for item in (transaction['items'] or []) %}
+                                    {% set item_count = item_count + item['quantity'] %}
+                                {% endfor %}
+                                {{ item_count }} item
+                            </span>
+                        </td>
+                        <td>
+                            <strong>Rp {{ "{:,.0f}".format(transaction['total']) }}</strong>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    data-bs-toggle="collapse" 
+                                    data-bs-target="#detail-{{ transaction['id'] }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="detail-{{ transaction['id'] }}">
+                        <td colspan="6">
+                            <div class="bg-light p-3 rounded">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6>Detail Items:</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Kode</th>
+                                                        <th>Nama</th>
+                                                        <th>Harga</th>
+                                                        <th>Qty</th>
+                                                        <th>Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for item in transaction['items'] %}
+                                                    <tr>
+                                                        <td>{{ item['kode'] }}</td>
+                                                        <td>{{ item['nama'] }}</td>
+                                                        <td>Rp {{ "{:,.0f}".format(item['harga_jual']) }}</td>
+                                                        <td>{{ item['quantity'] }}</td>
+                                                        <td>Rp {{ "{:,.0f}".format(item['subtotal']) }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Ringkasan:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><strong>Total:</strong> Rp {{ "{:,.0f}".format(transaction['total']) }}</li>
+                                            <li><strong>Profit:</strong> Rp {{ "{:,.0f}".format(transaction['profit']) }}</li>
+                                            <li><strong>Items:</strong> {{ transaction['items']|length }} jenis</li>
+                                            <li><strong>Quantity:</strong> 
+                                                {% set total_qty = 0 %}
+                                                {% for item in transaction['items'] %}
+                                                    {% set total_qty = total_qty + item['quantity'] %}
+                                                {% endfor %}
+                                                {{ total_qty }} unit
+                                            </li>
+                                        </ul>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="printTransaction({{ transaction['id'] }})">
+                                            <i class="fas fa-print me-1"></i>
+                                            Print Ulang
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Card -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Ringkasan Hari Ini
+                </h6>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4>{{ transactions|length }}</h4>
+                        <small class="text-muted">Total Transaksi</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4>{{ transactions|sum(attribute='items')|sum(attribute='quantity') if transactions else 0 }}</h4>
+                        <small class="text-muted">Item Terjual</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4>Rp {{ "{:,.0f}".format(transactions|sum(attribute='total')) }}</h4>
+                        <small class="text-muted">Total Pendapatan</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4>Rp {{ "{:,.0f}".format(transactions|sum(attribute='profit')) }}</h4>
+                        <small class="text-muted">Total Profit</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+    <h4>Belum Ada Transaksi</h4>
+    <p class="text-muted">Riwayat transaksi akan muncul di sini setelah ada penjualan</p>
+    <a href="{{ url_for('cashier_pos') }}" class="btn btn-primary">
+        <i class="fas fa-cash-register me-2"></i>
+        Mulai Transaksi Pertama
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function printTransaction(transactionId) {
+    // Simple print functionality
+    window.print();
+}
+</script>
+{% endblock %}

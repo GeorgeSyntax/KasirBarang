@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Tambah Barang{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-plus-circle me-2"></i>Tambah Barang</h2>
+                <a href="{{ url_for('admin_items') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Kembali
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Informasi Barang
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="addItemForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="kode" class="form-label">Kode Barang *</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="kode" name="kode" required 
+                                           placeholder="Contoh: BRG001" maxlength="20">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="generateUniqueCode()">
+                                        <i class="fas fa-magic"></i> Generate
+                                    </button>
+                                </div>
+                                <div class="form-text">Kode unik untuk identifikasi barang</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nama" class="form-label">Nama Barang *</label>
+                                <input type="text" class="form-control" id="nama" name="nama" required 
+                                       placeholder="Masukkan nama barang" maxlength="100">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="harga_awal" class="form-label">Harga Awal (Modal) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" class="form-control" id="harga_awal" name="harga_awal" 
+                                           required min="0" step="100" placeholder="0">
+                                </div>
+                                <div class="form-text">Harga pembelian/modal barang</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="harga_jual" class="form-label">Harga Jual *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" class="form-control" id="harga_jual" name="harga_jual" 
+                                           required min="0" step="100" placeholder="0">
+                                </div>
+                                <div class="form-text">Harga jual ke customer</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="stok_awal" class="form-label">Stok Awal *</label>
+                                <input type="number" class="form-control" id="stok_awal" name="stok_awal" 
+                                       required min="0" placeholder="0">
+                                <div class="form-text">Jumlah stok awal barang</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-info d-none" id="profitInfo">
+                                    <i class="fas fa-calculator me-2"></i>
+                                    <strong>Prediksi Profit per Unit:</strong> 
+                                    <span id="profitAmount">Rp 0</span>
+                                    <br>
+                                    <small>Profit Total (jika semua stok terjual): <span id="totalProfitAmount">Rp 0</span></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-info me-md-2" onclick="showCodePreview()">
+                                <i class="fas fa-qrcode me-1"></i>
+                                Preview & Download Kode
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i>
+                                Simpan Barang
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card" id="previewCard" style="display: none;">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-qrcode me-2"></i>
+                        Preview & Download Kode
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <h6 class="text-primary">Barcode (CODE128)</h6>
+                        <div class="border p-3 mb-2 bg-white rounded">
+                            <img id="barcodeImg" src="" alt="Barcode akan muncul di sini" 
+                                 style="max-width: 100%; height: auto;">
+                        </div>
+                        <a href="#" id="downloadBarcode" class="btn btn-sm btn-primary" target="_blank">
+                            <i class="fas fa-download me-1"></i>Download Barcode
+                        </a>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-success">QR Code</h6>
+                        <div class="border p-3 mb-2 bg-white rounded d-flex justify-content-center">
+                            <img id="qrcodeImg" src="" alt="QR Code akan muncul di sini" 
+                                 style="width: 150px; height: 150px;">
+                        </div>
+                        <a href="#" id="downloadQRCode" class="btn btn-sm btn-success" target="_blank">
+                            <i class="fas fa-download me-1"></i>Download QR Code
+                        </a>
+                    </div>
+
+                    <div class="alert alert-light">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Barcode dan QR Code menggunakan server-side generation
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function generateUniqueCode() {
+        const timestamp = Date.now();
+        const random = Math.floor(Math.random() * 1000);
+        const code = 'ITM' + timestamp.toString().slice(-6) + random.toString().padStart(3, '0');
+        document.getElementById('kode').value = code;
+        updateProfit();
+    }
+
+    function updateProfit() {
+        const hargaAwal = parseInt(document.getElementById('harga_awal').value) || 0;
+        const hargaJual = parseInt(document.getElementById('harga_jual').value) || 0;
+        const stokAwal = parseInt(document.getElementById('stok_awal').value) || 0;
+        const profitInfo = document.getElementById('profitInfo');
+        const profitAmount = document.getElementById('profitAmount');
+        const totalProfitAmount = document.getElementById('totalProfitAmount');
+
+        if (hargaAwal > 0 && hargaJual > 0) {
+            const profitPerUnit = hargaJual - hargaAwal;
+            const totalProfit = profitPerUnit * stokAwal;
+
+            profitAmount.textContent = 'Rp ' + profitPerUnit.toLocaleString('id-ID');
+            totalProfitAmount.textContent = 'Rp ' + totalProfit.toLocaleString('id-ID');
+
+            if (profitPerUnit > 0) {
+                profitInfo.className = 'alert alert-success';
+            } else if (profitPerUnit < 0) {
+                profitInfo.className = 'alert alert-danger';
+            } else {
+                profitInfo.className = 'alert alert-warning';
+            }
+
+            profitInfo.classList.remove('d-none');
+        } else {
+            profitInfo.classList.add('d-none');
+        }
+    }
+
+    function showCodePreview() {
+        const kode = document.getElementById('kode').value.trim();
+        if (!kode) {
+            alert('Masukkan kode barang terlebih dahulu!');
+            document.getElementById('kode').focus();
+            return;
+        }
+
+        const previewCard = document.getElementById('previewCard');
+        const barcodeImg = document.getElementById('barcodeImg');
+        const qrcodeImg = document.getElementById('qrcodeImg');
+        const downloadBarcode = document.getElementById('downloadBarcode');
+        const downloadQRCode = document.getElementById('downloadQRCode');
+
+        // Show preview card
+        previewCard.style.display = 'block';
+
+        // Set image sources directly to server endpoints
+        const encodedKode = encodeURIComponent(kode);
+        barcodeImg.src = '/generate_barcode/' + encodedKode;
+        qrcodeImg.src = '/generate_qrcode/' + encodedKode;
+
+        // Set download links
+        downloadBarcode.href = '/download_barcode/' + encodedKode;
+        downloadQRCode.href = '/download_qrcode/' + encodedKode;
+
+        console.log('Server-side generation initiated for:', kode);
+    }
+
+    // Event listeners
+    document.getElementById('harga_awal').addEventListener('input', updateProfit);
+    document.getElementById('harga_jual').addEventListener('input', updateProfit);
+    document.getElementById('stok_awal').addEventListener('input', updateProfit);
+</script>
+{% endblock %}
